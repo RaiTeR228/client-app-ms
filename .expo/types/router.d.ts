@@ -1,0 +1,14 @@
+/* eslint-disable */
+import * as Router from 'expo-router';
+
+export * from 'expo-router';
+
+declare module 'expo-router' {
+  export namespace ExpoRouter {
+    export interface __routes<T extends string | object = string> {
+      hrefInputParams: { pathname: Router.RelativePathString, params?: Router.UnknownInputParams } | { pathname: Router.ExternalPathString, params?: Router.UnknownInputParams } | { pathname: `/1index`; params?: Router.UnknownInputParams; } | { pathname: `/`; params?: Router.UnknownInputParams; } | { pathname: `/../components/MetricCard`; params?: Router.UnknownInputParams; } | { pathname: `/../components/MetricList`; params?: Router.UnknownInputParams; } | { pathname: `/../types/Metric`; params?: Router.UnknownInputParams; } | { pathname: `/_sitemap`; params?: Router.UnknownInputParams; } | { pathname: `/info/About`; params?: Router.UnknownInputParams; } | { pathname: `/info/Contacts`; params?: Router.UnknownInputParams; };
+      hrefOutputParams: { pathname: Router.RelativePathString, params?: Router.UnknownOutputParams } | { pathname: Router.ExternalPathString, params?: Router.UnknownOutputParams } | { pathname: `/1index`; params?: Router.UnknownOutputParams; } | { pathname: `/`; params?: Router.UnknownOutputParams; } | { pathname: `/../components/MetricCard`; params?: Router.UnknownOutputParams; } | { pathname: `/../components/MetricList`; params?: Router.UnknownOutputParams; } | { pathname: `/../types/Metric`; params?: Router.UnknownOutputParams; } | { pathname: `/_sitemap`; params?: Router.UnknownOutputParams; } | { pathname: `/info/About`; params?: Router.UnknownOutputParams; } | { pathname: `/info/Contacts`; params?: Router.UnknownOutputParams; };
+      href: Router.RelativePathString | Router.ExternalPathString | `/1index${`?${string}` | `#${string}` | ''}` | `/${`?${string}` | `#${string}` | ''}` | `/../components/MetricCard${`?${string}` | `#${string}` | ''}` | `/../components/MetricList${`?${string}` | `#${string}` | ''}` | `/../types/Metric${`?${string}` | `#${string}` | ''}` | `/_sitemap${`?${string}` | `#${string}` | ''}` | `/info/About${`?${string}` | `#${string}` | ''}` | `/info/Contacts${`?${string}` | `#${string}` | ''}` | { pathname: Router.RelativePathString, params?: Router.UnknownInputParams } | { pathname: Router.ExternalPathString, params?: Router.UnknownInputParams } | { pathname: `/1index`; params?: Router.UnknownInputParams; } | { pathname: `/`; params?: Router.UnknownInputParams; } | { pathname: `/../components/MetricCard`; params?: Router.UnknownInputParams; } | { pathname: `/../components/MetricList`; params?: Router.UnknownInputParams; } | { pathname: `/../types/Metric`; params?: Router.UnknownInputParams; } | { pathname: `/_sitemap`; params?: Router.UnknownInputParams; } | { pathname: `/info/About`; params?: Router.UnknownInputParams; } | { pathname: `/info/Contacts`; params?: Router.UnknownInputParams; };
+    }
+  }
+}
