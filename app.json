@@ -11,6 +11,7 @@
       "icon": "./assets/expo.icon"
     },
     "android": {
+
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -18,7 +19,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.client"
+      "package": "com.trava228.client"
     },
     "web": {
       "output": "static",
