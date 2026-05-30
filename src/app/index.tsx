@@ -4,6 +4,7 @@ import ProductList from "@/components/ServerList";
 import RamList from "@/components/RamList";
 import DiskList from "@/components/DiskList";
 import TemperatureList from "@/components/TemperatureList";
+import MetricList from "@/components/MetricList";
 import {router} from "expo-router";
 import { Button,View, ScrollView, Text, StyleSheet } from "react-native";
 
@@ -30,6 +31,10 @@ export default function HomeScreen() {
       
       <View style={styles.section}>
         <TemperatureList />
+      </View>
+
+      <View style={styles.section}>
+        <MetricList/>
       </View>
     
     </ScrollView>

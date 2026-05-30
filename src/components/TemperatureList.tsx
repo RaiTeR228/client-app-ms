@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { FlatList, View, Text, StyleSheet } from 'react-native';
 
 const API_URL = 'http://127.0.0.1:8000/api/temp/';
-const API_KEY = '31fae73538bd56225e08417f62d7c874c8c2c578f8afb24651dacb5b691cb442';
+const API_KEY = '6b06b60b24a280f9a563194399293a714694f375592d3866d0f8415c88efb19b';
 
 interface ServerResponse {
     id: number;
