@@ -1,10 +1,11 @@
 
 // app/index.tsx
-import ProductList from "@/components/ServerList";
+import ServerList from "@/components/ServerList";
 import RamList from "@/components/RamList";
 import DiskList from "@/components/DiskList";
 import TemperatureList from "@/components/TemperatureList";
 import MetricList from "@/components/MetricList";
+import {MetricListRam} from "@/components/MetricList";
 import {router} from "expo-router";
 import { Button,View, ScrollView, Text, StyleSheet } from "react-native";
 
@@ -18,7 +19,8 @@ export default function HomeScreen() {
     // </View> 
     <ScrollView style={styles.container}>
       <View style={styles.section}>
-        <ProductList />
+        {/* отображение cpu */}
+        <ServerList />
       </View>
       
       <View style={styles.section}>
@@ -33,8 +35,9 @@ export default function HomeScreen() {
         <TemperatureList />
       </View>
 
-      <View style={styles.section}>
+      <View>
         <MetricList/>
+        <MetricListRam />
       </View>
     
     </ScrollView>

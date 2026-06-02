@@ -3,4 +3,5 @@ export type Metric = {
         "Use_Cpu": number,
         "Use_Ram": number,
         "Use_Swap": number,
+        "Procent_Ram": number,
 }

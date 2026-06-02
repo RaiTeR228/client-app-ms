@@ -2,8 +2,8 @@ import axios from 'axios';
 import { useState, useEffect } from 'react';
 import { FlatList, View, Text, StyleSheet } from 'react-native';
 
-const API_URL = 'http://127.0.0.1:8000/api/temp/';
-const API_KEY = '6b06b60b24a280f9a563194399293a714694f375592d3866d0f8415c88efb19b';
+const API_URL = 'http://83.143.112.253:8000/api/temp/';
+const API_KEY = '005bcf529450236e9f6b62cb12c1a9012b4193b0bbab85e7667570727eff30a4';
 
 interface ServerResponse {
     id: number;
@@ -15,7 +15,7 @@ interface ServerResponse {
 }
 
 const apiClient = axios.create({
-    baseURL: 'http://127.0.0.1:8000/api/',
+    baseURL: API_URL,
     headers: {
         'Authorization': `Api-Key ${API_KEY}`,
         'Content-Type': 'application/json',
@@ -30,7 +30,7 @@ const TemperatureList = () => {
     const getTemperatureData = async () => {
         try {
             setLoading(true);
-            const response = await apiClient.get<ServerResponse>('temp/');
+            const response = await apiClient.get<ServerResponse>('');
             // console.log('Temperature data:', response.data.temperature);
             setTemperatureData(response.data.temperature);
         } catch (err) {
@@ -43,6 +43,12 @@ const TemperatureList = () => {
 
     useEffect(() => {
         getTemperatureData();
+        const interval = setInterval(() => {
+            getTemperatureData();
+        }, 5000);
+        
+        // Очистка интервала при размонтировании компонента
+        return () => clearInterval(interval);
     }, []);
 
     if (loading) {

@@ -1,10 +1,9 @@
-import type {Metric} from "@/types/Metric";
 import axios from "axios";
 import React, {useEffect, useState} from "react";
 import {View, Text, StyleSheet} from "react-native";
 
-const API_URL_METRIC = "http://127.0.0.1:8000/api/post-stats/";
-const API_KEY = "6b06b60b24a280f9a563194399293a714694f375592d3866d0f8415c88efb19b";
+const API_URL = "http://83.143.112.253:8000/api/post-stats/";
+const API_KEY = "005bcf529450236e9f6b62cb12c1a9012b4193b0bbab85e7667570727eff30a4";
 
 
 interface ServerResponse {
@@ -18,7 +17,7 @@ interface ServerResponse {
 }
 
 const apiClient = axios.create({
-    baseURL: 'http://127.0.0.1:8000/api/',
+    baseURL: API_URL,
     headers:{
         "Authorization": `Api-Key ${API_KEY}`,
         "Content-Type": "application/json"
@@ -26,14 +25,14 @@ const apiClient = axios.create({
 });
     
 const MetricList = () => {
-    const [metricData, setMetricData] = useState<Metric | null>(null);
+    const [metricData, setMetricData] = useState<ServerResponse | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     const getMetricData = async () => {
         try {
             setLoading(true)
-            const response = await apiClient.get<ServerResponse>('post-stats/');
+            const response = await apiClient.get<ServerResponse>('');
             setMetricData(response.data);
             setError(null);
         } catch (err) {
@@ -98,11 +97,11 @@ const MetricList = () => {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Метрики сервера</Text>
+            {/* <Text style={styles.title}>Метрики сервера</Text> */}
             <Text style={styles.label}>
-                Использование CPU: {metricData.Use_Cpu?.toFixed(1) ?? '0'}%
+                {metricData.Use_Cpu?.toFixed(1) ?? '0'}%
             </Text>
-            <Text style={styles.label}>
+            {/* <Text style={styles.label}>
                 Использование RAM: {formatBytes(metricData.Use_Ram)}
             </Text>
             <Text style={styles.label}>
@@ -110,7 +109,96 @@ const MetricList = () => {
             </Text>
             <Text style={styles.timestamp}>
                 Обновлено: {new Date().toLocaleTimeString()}
+            </Text> */}
+        </View>
+    );
+};
+
+const MetricListRam = () => {
+    const [metricData, setMetricData] = useState<ServerResponse | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    const getMetricData = async () => {
+        try {
+            setLoading(true)
+            const response = await apiClient.get<ServerResponse>('');
+            setMetricData(response.data);
+            setError(null);
+        } catch (err) {
+            setError('Ошибка загрузки данных');
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    useEffect(() => {
+        getMetricData(); // Первая загрузка
+        
+        // Автообновление каждые 5 секунд
+        const interval = setInterval(() => {
+            getMetricData();
+        }, 5000);
+        
+        // Очистка интервала при размонтировании компонента
+        return () => clearInterval(interval);
+    }, []);
+
+    // Функция форматирования байтов в читаемый вид
+    const formatBytes = (bytes: number): string => {
+        if (bytes === 0) return '0 B';
+        if (!bytes) return 'Нет данных';
+        
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        
+        // Ограничиваем размер массива
+        const sizeIndex = Math.min(i, sizes.length - 1);
+        const value = bytes / Math.pow(k, sizeIndex);
+        
+        return `${value.toFixed(1)} ${sizes[sizeIndex]}`;
+    };
+
+    if (loading && !metricData) {
+        return (
+            <View style={styles.container}>
+                <Text>Загрузка информации...</Text>
+            </View>
+        );
+    }
+
+    if (error) {
+        return (
+            <View style={styles.container}>
+                <Text style={styles.error}>Ошибка: {error}</Text>
+            </View>
+        );
+    }
+
+    if (!metricData){
+        return(
+            <View style={styles.container}>
+                <Text style={styles.error}>Нет данных</Text>
+            </View>
+        )
+    }
+
+    return (
+        <View style={styles.container}>
+            {/* <Text style={styles.label}>
+                {metricData.Use_Cpu?.toFixed(1) ?? '0'}%
+            </Text> */}
+            <Text style={styles.label}>
+                {formatBytes(metricData.Use_Ram)}
             </Text>
+            {/* <Text style={styles.label}>
+                Использование Swap: {formatBytes(metricData.Use_Swap)}
+            </Text>
+            <Text style={styles.timestamp}>
+                Обновлено: {new Date().toLocaleTimeString()}
+            </Text> */}
         </View>
     );
 };
@@ -152,3 +240,4 @@ const styles = StyleSheet.create({
 });
 
 export default MetricList;
+export { MetricListRam };
