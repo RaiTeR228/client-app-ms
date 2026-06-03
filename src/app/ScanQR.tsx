@@ -1,25 +1,20 @@
-// app/ScanQR.tsx
-import React, { useState, useEffect } from 'react';
+import { Camera, CameraView } from 'expo-camera';
+import { useRouter } from "expo-router";
+import { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
+  ActivityIndicator,
   Alert,
-  TouchableOpacity,
   Modal,
-  ActivityIndicator
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
-import { Camera, CameraType } from 'expo-camera';
 import { addServer } from '../services/serverService';
-import { useNavigation } from '@react-navigation/native';
 
-// Типизация для navigation
-type NavigationProps = {
-  goBack: () => void;
-};
-
-export const ScanQRScreen = () => {
-  const navigation = useNavigation<NavigationProps>();
+// ✅ Изменено: теперь default export, а не named export
+export default function ScanQR() {
+  const router = useRouter();
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [scanned, setScanned] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -117,12 +112,14 @@ export const ScanQRScreen = () => {
       );
       
       setShowConfirmModal(false);
+      setScanned(false);
       Alert.alert(
         'Успех',
         `Сервер "${scannedData.name}" успешно добавлен`,
-        [{ text: 'OK', onPress: () => navigation.goBack() }]
+        [{ text: 'OK', onPress: () => router.replace('/') }]
       );
     } catch (error) {
+      console.error('ScanQR addServer error:', error);
       Alert.alert('Ошибка', 'Не удалось добавить сервер');
       setShowConfirmModal(false);
       setScanned(false);
@@ -158,11 +155,13 @@ export const ScanQRScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Camera
-        style={styles.camera}
-        type="back"
-        onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
-      >
+      <View style={styles.cameraContainer}>
+        <CameraView
+          style={styles.camera}
+          facing="back"
+          barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+          onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+        />
         <View style={styles.overlay}>
           <View style={styles.scanArea} />
           <Text style={styles.scanText}>
@@ -177,7 +176,7 @@ export const ScanQRScreen = () => {
             </TouchableOpacity>
           )}
         </View>
-      </Camera>
+      </View>
 
       <Modal
         animationType="slide"
@@ -230,13 +229,18 @@ export const ScanQRScreen = () => {
       </Modal>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  cameraContainer: { flex: 1 },
   camera: { flex: 1 },
   overlay: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',

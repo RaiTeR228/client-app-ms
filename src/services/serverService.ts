@@ -12,6 +12,31 @@ export interface Server {
 }
 
 const SERVERS_KEY = '@monitoring_servers';
+const TOKEN_FALLBACK_PREFIX = '@monitoring_server_token_';
+
+const setTokenValue = async (key: string, value: string): Promise<void> => {
+  try {
+    await SecureStore.setItemAsync(key, value);
+  } catch (error) {
+    await AsyncStorage.setItem(`${TOKEN_FALLBACK_PREFIX}${key}`, value);
+  }
+};
+
+const getTokenValue = async (key: string): Promise<string | null> => {
+  try {
+    return await SecureStore.getItemAsync(key);
+  } catch (error) {
+    return await AsyncStorage.getItem(`${TOKEN_FALLBACK_PREFIX}${key}`);
+  }
+};
+
+const deleteTokenValue = async (key: string): Promise<void> => {
+  try {
+    await SecureStore.deleteItemAsync(key);
+  } catch (error) {
+    await AsyncStorage.removeItem(`${TOKEN_FALLBACK_PREFIX}${key}`);
+  }
+};
 
 // Генерация ID
 const generateId = (): string => {
@@ -39,8 +64,8 @@ export const addServer = async (
   const servers = await getServers();
   const tokenKey = `token_${generateId()}`;
   
-  // Сохраняем токен в SecureStore
-  await SecureStore.setItemAsync(tokenKey, token);
+  // Сохраняем токен в SecureStore или в AsyncStorage как fallback
+  await setTokenValue(tokenKey, token);
   
   const newServer: Server = {
     id: generateId(),
@@ -75,7 +100,7 @@ export const deleteServer = async (id: string): Promise<void> => {
   const serverToDelete = servers.find(s => s.id === id);
   
   if (serverToDelete) {
-    await SecureStore.deleteItemAsync(serverToDelete.tokenKey);
+    await deleteTokenValue(serverToDelete.tokenKey);
   }
   
   await saveServers(servers.filter(s => s.id !== id));
@@ -87,7 +112,7 @@ export const getServerToken = async (serverId: string): Promise<string | null> =
   const server = servers.find(s => s.id === serverId);
   
   if (!server) return null;
-  return await SecureStore.getItemAsync(server.tokenKey);
+  return await getTokenValue(server.tokenKey);
 };
 
 // Обновить токен сервера
@@ -98,11 +123,11 @@ export const updateServerToken = async (serverId: string, newToken: string): Pro
   if (!server) throw new Error('Сервер не найден');
   
   // Удаляем старый токен
-  await SecureStore.deleteItemAsync(server.tokenKey);
+  await deleteTokenValue(server.tokenKey);
   
   // Создаем новый
   const newTokenKey = `token_${generateId()}`;
-  await SecureStore.setItemAsync(newTokenKey, newToken);
+  await setTokenValue(newTokenKey, newToken);
   
   // Обновляем ссылку
   server.tokenKey = newTokenKey;

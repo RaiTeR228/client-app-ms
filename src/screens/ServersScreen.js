@@ -20,6 +20,7 @@ import {
 } from '../services/serverService';
 
 export const ServersScreen = () => {
+  const navigation = useNavigation(); // ← добавлено из второго объявления
   const [servers, setServers] = useState([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingServer, setEditingServer] = useState(null);
@@ -131,10 +132,19 @@ export const ServersScreen = () => {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Серверы мониторинга</Text>
-        <Button
-          title={showAddForm ? "Отмена" : "+ Добавить сервер"}
-          onPress={() => setShowAddForm(!showAddForm)}
-        />
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          {/* ← кнопка QR из второго объявления */}
+          <TouchableOpacity 
+            style={styles.scanButton}
+            onPress={() => navigation.navigate('ScanQR')}
+          >
+            <Text style={styles.scanButtonText}>📷 QR</Text>
+          </TouchableOpacity>
+          <Button
+            title={showAddForm ? "Отмена" : "+ Добавить"}
+            onPress={() => setShowAddForm(!showAddForm)}
+          />
+        </View>
       </View>
       
       {showAddForm && (
@@ -177,29 +187,7 @@ export const ServersScreen = () => {
   );
 };
 
-export const ServersScreen = () => {
-  const navigation = useNavigation();
-  
-  // Добавить в header
-  <View style={styles.header}>
-    <Text style={styles.title}>Серверы мониторинга</Text>
-    <View style={{ flexDirection: 'row', gap: 8 }}>
-      <TouchableOpacity 
-        style={styles.scanButton}
-        onPress={() => navigation.navigate('ScanQR')}
-      >
-        <Text style={styles.scanButtonText}>📷 QR</Text>
-      </TouchableOpacity>
-      <Button
-        title={showAddForm ? "Отмена" : "+ Добавить"}
-        onPress={() => setShowAddForm(!showAddForm)}
-      />
-    </View>
-  </View>
-};
-
-
-
+// Стили (нужно добавить стили для scanButton)
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -283,7 +271,6 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 32
   },
-
   scanButton: {
     backgroundColor: '#6c5ce7',
     paddingHorizontal: 12,
@@ -294,5 +281,5 @@ const styles = StyleSheet.create({
   scanButtonText: {
     color: 'white',
     fontWeight: '600',
-  },
+  }
 });

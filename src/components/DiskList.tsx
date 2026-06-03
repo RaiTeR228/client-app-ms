@@ -3,8 +3,8 @@ import { useState, useEffect } from 'react';
 import { FlatList, View, Text, StyleSheet } from 'react-native';
 // import { DataConverter } from '../types/converters';
 
-const API_URL = 'http://83.143.112.253:8000/api/disk/';
-const API_KEY = '005bcf529450236e9f6b62cb12c1a9012b4193b0bbab85e7667570727eff30a4';
+const API_URL = 'http://127.0.0.1:8000/api/disk/';
+const API_KEY = '3d5a6340a65f8e6a97a94cc9eb10f1648b7f3a5126f5218ee66c553592711206';
 
 interface ServerResponse {
     success: boolean;
