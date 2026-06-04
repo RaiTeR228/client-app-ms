@@ -1,25 +1,12 @@
-import axios from "axios";
-import React, {useEffect, useState} from "react";
-import {View, Text, StyleSheet} from "react-native";
-
-const API_URL = "http://127.0.0.1:8000/api/uptime/";
-const API_KEY = "3d5a6340a65f8e6a97a94cc9eb10f1648b7f3a5126f5218ee66c553592711206";
-
+import { useEffect, useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
+import { apiClient } from '../services/apiClient';
 
 interface ServerResponse {
     success: boolean;
     uptime: string;
     created_at: string;
 }
-
-const apiClient = axios.create({
-    baseURL: API_URL,
-    headers:{
-        "Authorization": `Api-Key ${API_KEY}`,
-        "Content-Type": "application/json"
-    }
-});
-
 
 const UptimeList = () => {
     const [uptimeData, setUptimeData] = useState<ServerResponse | null>(null);
@@ -29,8 +16,8 @@ const UptimeList = () => {
     const getUptimeData = async () => {
         try {
             setLoading(true)
-            const response = await apiClient.get<ServerResponse>('');
-            setUptimeData(response.data);
+            const response = await apiClient.request('/api/uptime/', { method: 'GET' });
+            setUptimeData(response);
             setError(null);
         } catch (err) {
             setError('Ошибка загрузки данных');
@@ -64,7 +51,7 @@ const UptimeList = () => {
         if (error) {
             return (
                 <View style={styles.container}>
-                    <Text style={styles.error}>Ошибка: {error}</Text>
+                    <Text style={styles.error}>{error}</Text>
                 </View>
             );
         }

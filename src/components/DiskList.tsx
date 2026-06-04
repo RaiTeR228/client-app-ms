@@ -1,10 +1,6 @@
-import axios from 'axios';
-import { useState, useEffect } from 'react';
-import { FlatList, View, Text, StyleSheet } from 'react-native';
-// import { DataConverter } from '../types/converters';
-
-const API_URL = 'http://127.0.0.1:8000/api/disk/';
-const API_KEY = '3d5a6340a65f8e6a97a94cc9eb10f1648b7f3a5126f5218ee66c553592711206';
+import { useEffect, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { apiClient } from '../services/apiClient';
 
 interface ServerResponse {
     success: boolean;
@@ -22,29 +18,6 @@ interface ServerResponse {
     };
 }
 
-// {
-//     "success": true,
-//     "server_uuid": "829b4efe-908f-416e-bee2-8879bc079dca",
-//     "disk": {
-//         "disk_name": "C:\\",
-//         "max_swap": "3145728000",
-//         "max_disk": "255351234560",
-//         "free_disk": "31437463552",
-//         "server_uuid": "829b4efe-908f-416e-bee2-8879bc079dca",
-//         "created_at": null,
-//         "updated_at": null,
-//         "usage_percent": 87.69
-//     }
-// }
-
-const apiClient = axios.create({
-    baseURL: API_URL,
-    headers: {
-        'Authorization': `Api-Key ${API_KEY}`,
-        'Content-Type': 'application/json',
-    }
-});
-
 const DiskList = () => {
     const [Data, setServerData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -53,9 +26,9 @@ const DiskList = () => {
     const getServerData = async () => {
         try {
             setLoading(true);
-            const response = await apiClient.get<ServerResponse>('');
-            // console.log('Disk data:', response.data.disk);
-            setServerData(response.data.disk);
+            const response = await apiClient.request('/api/disk/', { method: 'GET' });
+            setServerData(response.disk);
+            setError(null);
         } catch (err) {
             setError('Ошибка загрузки данных');
             console.error(err);

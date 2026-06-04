@@ -1,10 +1,6 @@
-import axios from "axios";
-import React, {useEffect, useState} from "react";
-import {View, Text, StyleSheet} from "react-native";
-
-const API_URL = "http://127.0.0.1:8000/api/post-stats/";
-const API_KEY = "3d5a6340a65f8e6a97a94cc9eb10f1648b7f3a5126f5218ee66c553592711206";
-
+import { useEffect, useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
+import { apiClient } from '../services/apiClient';
 
 interface ServerResponse {
     success: boolean;
@@ -13,17 +9,10 @@ interface ServerResponse {
     Use_Cpu: number;
     Use_Ram: number;
     Use_Swap: number;
+    Procent_Ram: number;
     created_at?: string;
 }
 
-const apiClient = axios.create({
-    baseURL: API_URL,
-    headers:{
-        "Authorization": `Api-Key ${API_KEY}`,
-        "Content-Type": "application/json"
-    }
-});
-    
 const MetricList = () => {
     const [metricData, setMetricData] = useState<ServerResponse | null>(null);
     const [loading, setLoading] = useState(true);
@@ -32,8 +21,8 @@ const MetricList = () => {
     const getMetricData = async () => {
         try {
             setLoading(true)
-            const response = await apiClient.get<ServerResponse>('');
-            setMetricData(response.data);
+            const response = await apiClient.request('/api/post-stats/', { method: 'GET' });
+            setMetricData(response);
             setError(null);
         } catch (err) {
             setError('Ошибка загрузки данных');
@@ -98,16 +87,16 @@ const MetricList = () => {
     return (
         <View style={styles.container}>
             {/* <Text style={styles.title}>Метрики сервера</Text> */}
-            <Text style={styles.label}>
-                {metricData.Use_Cpu?.toFixed(1) ?? '0'}%
+            <Text style={{ color: '#ffffff' }}>
+                {metricData.Use_Cpu}
             </Text>
-            {/* <Text style={styles.label}>
+            {/* <Text>
                 Использование RAM: {formatBytes(metricData.Use_Ram)}
             </Text>
-            <Text style={styles.label}>
+            <Text>
                 Использование Swap: {formatBytes(metricData.Use_Swap)}
             </Text>
-            <Text style={styles.timestamp}>
+            <Text>
                 Обновлено: {new Date().toLocaleTimeString()}
             </Text> */}
         </View>
@@ -122,8 +111,8 @@ const MetricListRam = () => {
     const getMetricData = async () => {
         try {
             setLoading(true)
-            const response = await apiClient.get<ServerResponse>('');
-            setMetricData(response.data);
+            const response = await apiClient.request('/api/post-stats/', { method: 'GET' });
+            setMetricData(response);
             setError(null);
         } catch (err) {
             setError('Ошибка загрузки данных');
@@ -134,18 +123,15 @@ const MetricListRam = () => {
     }
 
     useEffect(() => {
-        getMetricData(); // Первая загрузка
-        
-        // Автообновление каждые 5 секунд
+        getMetricData();
+
         const interval = setInterval(() => {
             getMetricData();
         }, 5000);
-        
-        // Очистка интервала при размонтировании компонента
+
         return () => clearInterval(interval);
     }, []);
 
-    // Функция форматирования байтов в читаемый вид
     const formatBytes = (bytes: number): string => {
         if (bytes === 0) return '0 B';
         if (!bytes) return 'Нет данных';
@@ -187,18 +173,72 @@ const MetricListRam = () => {
 
     return (
         <View style={styles.container}>
-            {/* <Text style={styles.label}>
-                {metricData.Use_Cpu?.toFixed(1) ?? '0'}%
-            </Text> */}
-            <Text style={styles.label}>
+            <Text style={{ color: '#ffffff' }}>
                 {formatBytes(metricData.Use_Ram)}
             </Text>
-            {/* <Text style={styles.label}>
-                Использование Swap: {formatBytes(metricData.Use_Swap)}
+        </View>
+    );
+};
+
+const MetricListProcentRam = () => {
+    const [metricData, setMetricData] = useState<ServerResponse | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    const getMetricData = async () => {
+        try {
+            setLoading(true)
+            const response = await apiClient.request('/api/post-stats/', { method: 'GET' });
+            setMetricData(response);
+            setError(null);
+        } catch (err) {
+            setError('Ошибка загрузки данных');
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    useEffect(() => {
+        getMetricData(); 
+
+        const interval = setInterval(() => {
+            getMetricData();
+        }, 5000);
+
+        return () => clearInterval(interval);
+    }, []);
+
+    if (loading && !metricData) {
+        return (
+            <View style={styles.container}>
+                <Text>Загрузка информации...</Text>
+            </View>
+        );
+    }
+
+    if (error) {
+        return (
+            <View style={styles.container}>
+                <Text style={styles.error}>Ошибка: {error}</Text>
+            </View>
+        );
+    }
+
+    if (!metricData){
+        return(
+            <View style={styles.container}>
+                <Text style={styles.error}>Нет данных</Text>
+            </View>
+        )
+    }
+
+    return (
+        <View style={styles.container}>
+            <Text style={{ color: '#ffffff' }}>
+                {metricData.Procent_Ram}
             </Text>
-            <Text style={styles.timestamp}>
-                Обновлено: {new Date().toLocaleTimeString()}
-            </Text> */}
+
         </View>
     );
 };
@@ -240,4 +280,5 @@ const styles = StyleSheet.create({
 });
 
 export default MetricList;
-export { MetricListRam };
+export { MetricListRam, MetricListProcentRam };
+

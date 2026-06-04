@@ -36,7 +36,23 @@
           }
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-status-bar",
+        {
+          "hidden": true,
+          "translucent": true
+        }
+      ],
+      [
+        "expo-navigation-bar",
+        {
+          "visible": "hidden",
+          "position": "absolute",
+          "behavior": "overlay-swipe",
+          "backgroundColor": "#00000000"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

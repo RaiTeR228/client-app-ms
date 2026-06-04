@@ -1,11 +1,6 @@
-import axios from 'axios';
-import { useState, useEffect } from 'react';
-import { FlatList, View, Text, StyleSheet } from 'react-native';
-import RamCard from './RamCard';
-import { Ram } from '@/types/Ram';
-
-const API_URL = 'http://127.0.0.1:8000/api/ram/';
-const API_KEY = '3d5a6340a65f8e6a97a94cc9eb10f1648b7f3a5126f5218ee66c553592711206';
+import { useEffect, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { apiClient } from '../services/apiClient';
 
 interface ServerResponse {
     success: boolean;
@@ -16,14 +11,6 @@ interface ServerResponse {
     };
 }
 
-const apiClient = axios.create({
-    baseURL: API_URL,
-    headers: {
-        'Authorization': `Api-Key ${API_KEY}`,
-        'Content-Type': 'application/json',
-    }
-});
-
 const RamList = () => {
     const [ramData, setRamData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -32,9 +19,9 @@ const RamList = () => {
     const getRamData = async () => {
         try {
             setLoading(true);
-            const response = await apiClient.get<ServerResponse>('');
-            // console.log('RAM data:', response.data.ram);
-            setRamData(response.data.ram);
+            const response = await apiClient.request('/api/ram/', { method: 'GET' });
+            setRamData(response.ram);
+            setError(null);
         } catch (err) {
             setError('Ошибка загрузки данных');
             console.error(err);
@@ -55,23 +42,23 @@ const RamList = () => {
 
     if (loading) {
         return (
-            <View style={styles.container}>
-                <Text>Загрузка информации о RAM...</Text>
+            <View>
+                {/* <Text>Загрузка информации о RAM...</Text> */}
             </View>
         );
     }
 
     if (error) {
         return (
-            <View style={styles.container}>
-                <Text style={styles.error}>Ошибка: {error}</Text>
+            <View>
+                <Text>Ошибка: {error}</Text>
             </View>
         );
     }
 
     if (!ramData) {
         return (
-            <View style={styles.container}>
+            <View>
                 <Text>Нет данных о RAM</Text>
             </View>
         );
@@ -79,10 +66,10 @@ const RamList = () => {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Информация о RAM</Text>
-            <View style={styles.card}>
-                <Text style={styles.label}>Максимальный объем RAM:</Text>
-                <Text style={styles.value}>{ramData.max_ram}</Text>
+            {/* <Text style={styles.title}>Информация о RAM</Text> */}
+            <View>
+                {/* <Text style={styles.label}>Максимальный объем RAM:</Text> */}
+                <Text style={{ color: '#ffffff' }}>{ramData.max_ram}</Text>
             </View>
         </View>
     );

@@ -1,9 +1,6 @@
-import axios from 'axios';
-import { useState, useEffect } from 'react';
-import { FlatList, View, Text, StyleSheet } from 'react-native';
-
-const API_URL = 'http://127.0.0.1:8000/api/temp/';
-const API_KEY = '3d5a6340a65f8e6a97a94cc9eb10f1648b7f3a5126f5218ee66c553592711206';
+import { useEffect, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { apiClient } from '../services/apiClient';
 
 interface ServerResponse {
     id: number;
@@ -14,14 +11,6 @@ interface ServerResponse {
     }
 }
 
-const apiClient = axios.create({
-    baseURL: API_URL,
-    headers: {
-        'Authorization': `Api-Key ${API_KEY}`,
-        'Content-Type': 'application/json',
-    }
-});
-
 const TemperatureList = () => {
     const [temperatureData, setTemperatureData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -30,9 +19,9 @@ const TemperatureList = () => {
     const getTemperatureData = async () => {
         try {
             setLoading(true);
-            const response = await apiClient.get<ServerResponse>('');
-            // console.log('Temperature data:', response.data.temperature);
-            setTemperatureData(response.data.temperature);
+            const response = await apiClient.request('/api/temp/', { method: 'GET' });
+            setTemperatureData(response.temperature);
+            setError(null);
         } catch (err) {
             setError('Ошибка загрузки данных');
             console.error(err);
@@ -53,8 +42,8 @@ const TemperatureList = () => {
 
     if (loading) {
         return (
-            <View style={styles.container}>
-                <Text>Загрузка информации о температуре...</Text>
+            <View>
+                {/* <Text>Загрузка информации о температуре...</Text> */}
             </View>
         );
     }
@@ -77,10 +66,10 @@ const TemperatureList = () => {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Информация о температуре</Text>
-            <View style={styles.card}>
-                <Text style={styles.label}>Текущая температура:</Text>
-                <Text style={styles.value}>{temperatureData.current_temp}°C</Text>
+            {/* <Text style={styles.title}>Информация о температуре</Text> */}
+            <View>
+                {/* <Text style={styles.label}>Текущая температура:</Text> */}
+                <Text style={{ color: '#ffffff' }}>{temperatureData.current_temp}</Text>
             </View>
         </View>
     );

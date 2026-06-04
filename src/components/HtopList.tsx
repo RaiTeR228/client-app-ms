@@ -1,32 +1,20 @@
-import axios from 'axios';
-import React, {useEffect, useState} from 'react';
-import {View, Text, StyleSheet, FlatList} from "react-native";
+import { useEffect, useState } from 'react';
+import { FlatList, StyleSheet, Text, View } from "react-native";
+import { apiClient } from '../services/apiClient';
 
-const API_URL = "http://127.0.0.1:8000/api/htop/"
-const API_KEY = "3d5a6340a65f8e6a97a94cc9eb10f1648b7f3a5126f5218ee66c553592711206"
-
-// Исправленный интерфейс под реальный ответ бэкенда
 interface ProcessData {
     pid: number;
-    name: string;           // В бэкенде поле 'name'
+    name: string;
     cpu_usage: number;
-    created_at: string;     // В бэкенде 'created_at'
+    created_at: string;
 }
 
 interface ServerResponse {
     success: boolean;
     server_uuid: string;
     processes_count: number;
-    processes: ProcessData[];  // Массив процессов
+    processes: ProcessData[];
 }
-
-const apiClient = axios.create({
-    baseURL: API_URL,
-    headers:{
-        "Authorization": `Api-Key ${API_KEY}`,
-        "Content-Type": "application/json"
-    }
-});
 
 const HtopList = () => {
     const [htopData, setHtopData] = useState<ServerResponse | null>(null);
@@ -36,9 +24,9 @@ const HtopList = () => {
     const getHtopData = async () => {
         try {
             setLoading(true);
-            const response = await apiClient.get<ServerResponse>('');
-            console.log('Получены данные:', response.data); // Для отладки
-            setHtopData(response.data);
+            const response = await apiClient.request('/api/htop/', { method: 'GET' });
+            console.log('Получены данные:', response);
+            setHtopData(response);
             setError(null);
         } catch (err: any) {
             console.error('Ошибка:', err.response?.data || err.message);

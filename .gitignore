@@ -11,3 +11,4 @@ ios/
 *.jks
 *.p12
 *.apk
+.env

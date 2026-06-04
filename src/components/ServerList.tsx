@@ -1,11 +1,6 @@
-import axios from 'axios';
-import { useState, useEffect } from 'react';
-import { FlatList, View, Text, StyleSheet } from 'react-native';
-import RamCard from './RamCard';
-import { Ram } from '@/types/Ram';
-
-const API_URL = 'http://127.0.0.1:8000/api/cpu/';
-const API_KEY = '3d5a6340a65f8e6a97a94cc9eb10f1648b7f3a5126f5218ee66c553592711206';
+import { useEffect, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { apiClient } from '../services/apiClient';
 
 interface ServerResponse {
     success: boolean;
@@ -19,14 +14,6 @@ interface ServerResponse {
 }
 
 
-const apiClient = axios.create({
-    baseURL: API_URL,
-    headers: {
-        'Authorization': `Api-Key ${API_KEY}`,
-        'Content-Type': 'application/json',
-    }
-});
-
 const ServerList = () => {
     const [serverData, setServerData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -35,9 +22,9 @@ const ServerList = () => {
     const getServerData = async () => {
         try {
             setLoading(true);
-            const response = await apiClient.get<ServerResponse>('');
-            // console.log('CPU data:', response.data.cpu);
-            setServerData(response.data.cpu);
+            const response = await apiClient.request('/api/cpu/', { method: 'GET' });
+            setServerData(response.cpu);
+            setError(null);
         } catch (err) {
             setError('Ошибка загрузки данных');
             console.error(err);
@@ -107,7 +94,7 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     card: {
-        backgroundColor: '#f0f0f0',
+        backgroundColor: '#cecece',
         padding: 15,
         borderRadius: 8,
         marginBottom: 10,

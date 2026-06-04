@@ -1,8 +1,10 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Animated } from 'react-native';
 import {
   ActivityIndicator,
+  Modal,
   Platform,
   SafeAreaView,
   ScrollView,
@@ -12,12 +14,22 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  LayoutAnimation,
+  UIManager,
   View,
 } from 'react-native';
 
 
+import DiskList from '@/components/DiskList';
+import EthernetList from '@/components/EthernetList';
+import HtopList from '@/components/HtopList';
+import MetricList, { MetricListRam, MetricListProcentRam } from '@/components/MetricList';
+import RamList from '@/components/RamList';
+import ServerList from '@/components/ServerList';
+import TemperatureList from '@/components/TemperatureList';
+import UptimeList from '@/components/UptimeList';
 import { apiClient } from '../services/apiClient';
-import { getActiveServer, getServers, setActiveServer } from '../services/serverService';
+import { deleteServer, getActiveServer, getServers, setActiveServer } from '../services/serverService';
 
 // Типы данных для отображения
 interface DisplayServer {
@@ -76,6 +88,11 @@ export default function App() {
   const [terminalHistory, setTerminalHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [pendingDeleteServerId, setPendingDeleteServerId] = useState<string | null>(null);
+  const [confirmDeleteVisible, setConfirmDeleteVisible] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<DisplayServer | null>(null);
+  // выподающие окна
+  const [expandedCpu, setExpandedCpu] = useState(false);
   
   const scrollViewRef = useRef<ScrollView>(null);
   const terminalInputRef = useRef<TextInput>(null);
@@ -108,6 +125,11 @@ export default function App() {
       setLoading(false);
     }
   }, []);
+// функция для переключение окон с анимации
+  const toggleCpuExpand = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpandedCpu(!expandedCpu);
+  };
 
   // Загрузка реальных метрик
   const loadMetrics = async () => {
@@ -115,7 +137,7 @@ export default function App() {
     
     try {
       // Пробуем получить данные из API
-      const response = await apiClient.request('/api/metrics/');
+      const response = await apiClient.request('/api/post-stats/');
       if (response) {
         setMetrics({
           cpu: response.cpu || 0,
@@ -131,23 +153,7 @@ export default function App() {
       }
     } catch (error) {
       console.error('Ошибка загрузки метрик:', error);
-      // Если API недоступен, используем демо-данные
-      if (serversData.length > 0) {
-        const currentServer = serversData.find(s => s.id === currentServerId);
-        if (currentServer) {
-          setMetrics({
-            cpu: Math.random() * 60 + 20,
-            ram: Math.random() * 50 + 30,
-            temp: Math.random() * 30 + 35,
-            disk: Math.random() * 40 + 20,
-            netDown: Math.random() * 5 + 0.5,
-            netUp: Math.random() * 3 + 0.3,
-            packets: Math.random() * 20000 + 5000,
-            uptime: `${Math.floor(Math.random() * 30)}д ${Math.floor(Math.random() * 24)}ч`,
-            totalDisk: 256
-          });
-        }
-      }
+      setMetrics(null);
     }
     
     setProcesses(getProcesses());
@@ -175,6 +181,53 @@ export default function App() {
     await setActiveServer(serverId);
     await apiClient.switchServer(serverId);
     loadMetrics();
+  };
+
+  const handleServerLongPress = (server: DisplayServer) => {
+    setPendingDeleteServerId(server.id);
+    setDeleteTarget(server);
+  };
+
+  const openDeleteConfirm = () => {
+    if (!deleteTarget) return;
+    setConfirmDeleteVisible(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+
+    try {
+      setConfirmDeleteVisible(false);
+      setLoading(true);
+      await deleteServer(deleteTarget.id);
+
+      const remainingServers = await getServers();
+      setServersData(remainingServers.map(s => ({ id: s.id, name: s.name, ip: s.ip, port: s.port })));
+
+      if (currentServerId === deleteTarget.id) {
+        if (remainingServers.length > 0) {
+          const nextServer = remainingServers[0];
+          setCurrentServerId(nextServer.id);
+          await setActiveServer(nextServer.id);
+          await apiClient.switchServer(nextServer.id);
+        } else {
+          setCurrentServerId('');
+          await setActiveServer('');
+        }
+      }
+    } catch (error) {
+      console.error('Ошибка удаления сервера:', error);
+    } finally {
+      setLoading(false);
+      setPendingDeleteServerId(null);
+      setDeleteTarget(null);
+    }
+  };
+
+  const cancelDelete = () => {
+    setConfirmDeleteVisible(false);
+    setPendingDeleteServerId(null);
+    setDeleteTarget(null);
   };
 
   // Получить текущий сервер для отображения
@@ -251,32 +304,66 @@ export default function App() {
     <ScrollView showsVerticalScrollIndicator={false} style={styles.tabContent}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.greetingTitle}>Серверная панель</Text>
-          <Text style={styles.greetingSub}>Локальный мониторинг • {currentDisplayServer?.name || 'Нет сервера'}</Text>
+          <Text style={styles.greetingSub}>{currentDisplayServer?.name || 'Нет сервера'}</Text>
         </View>
-        <View style={styles.serverBadge}>
+        {/* <View style={styles.serverBadge}>
           <Text style={styles.serverBadgeText}>🖥️ {currentDisplayServer?.name || '--'}</Text>
-        </View>
+        </View> */}
       </View>
 
       <LinearGradient colors={['rgba(18,22,32,0.65)', 'rgba(18,22,32,0.65)']} style={styles.statsCard}>
-        <View style={styles.uptimeRow}>
-          <Text style={styles.uptimeLabel}>⏱️ Время работы</Text>
-          <Text style={styles.uptimeValue}>{metrics?.uptime || '--'}</Text>
-        </View>
+
+        {/* <View style={styles.uptimeRow}>
+          <Text style={styles.uptimeValue}>{4 ?? <UptimeList/>}</Text>
+        </View> */}
         
         <View style={styles.mainMetrics}>
           <View style={styles.metricBlock}>
-            <Text style={styles.metricLabel}>📊 CPU</Text>
-            <Text style={styles.metricValue}>{Math.round(metrics?.cpu || 0)}<Text style={styles.metricUnit}>%</Text></Text>
+            <TouchableOpacity 
+              style={styles.metricBlockTouchable}
+              onPress={toggleCpuExpand}
+              activeOpacity={0.7}
+            >
+              <View style={styles.metricHeader}>
+                <Text style={styles.metricLabel}>📊 CPU</Text>
+                <Text style={styles.expandIcon}>{expandedCpu ? '▲' : '▼'}</Text>
+              </View>
+              <Text style={styles.metricValue}>
+                {(<MetricList/>)}<Text style={styles.metricUnit}>%</Text>
+              </Text>
+            </TouchableOpacity>
+            
+            {expandedCpu && (
+              <View style={styles.expandedInfo}>
+                <View style={styles.expandedInfoRow}>
+                  <Text style={styles.expandedInfoLabel}>Модель:</Text>
+                  <Text style={styles.expandedInfoValue}>Intel Xeon E5-2680 v4</Text>
+                </View>
+                <View style={styles.expandedInfoRow}>
+                  <Text style={styles.expandedInfoLabel}>Ядер:</Text>
+                  <Text style={styles.expandedInfoValue}>14 ядер / 28 потоков</Text>
+                </View>
+                <View style={styles.expandedInfoRow}>
+                  <Text style={styles.expandedInfoLabel}>Частота:</Text>
+                  <Text style={styles.expandedInfoValue}>2.4 GHz - 3.3 GHz</Text>
+                </View>
+                <View style={styles.expandedInfoRow}>
+                  <Text style={styles.expandedInfoLabel}>TDP:</Text>
+                  <Text style={styles.expandedInfoValue}>120 Вт</Text>
+                </View>
+                <View style={styles.expandedInfoDivider} />
+              </View>
+            )}
           </View>
+
           <View style={styles.metricBlock}>
             <Text style={styles.metricLabel}>💾 RAM</Text>
-            <Text style={styles.metricValue}>{Math.round(metrics?.ram || 0)}<Text style={styles.metricUnit}>%</Text></Text>
+            <Text style={styles.metricValue}>{<MetricListProcentRam/>}<Text style={styles.metricUnit}>%</Text></Text>
           </View>
+
           <View style={styles.metricBlock}>
             <Text style={styles.metricLabel}>🌡️ Темп.</Text>
-            <Text style={[styles.metricValue, styles.tempValue]}>{Math.round(metrics?.temp || 0)}<Text style={styles.metricUnit}>°C</Text></Text>
+            <Text style={[styles.metricValue, styles.tempValue]}>{<TemperatureList />}<Text style={styles.metricUnit}>°C</Text></Text>
           </View>
         </View>
 
@@ -291,7 +378,7 @@ export default function App() {
         <View style={styles.progressSection}>
           <View style={styles.progressLabel}>
             <Text style={styles.progressLabelText}>Оперативная память</Text>
-            <Text style={styles.progressLabelText}>{Math.round(metrics?.ram || 0)}%</Text>
+            <Text style={styles.progressLabelText}>{(<MetricListRam/>)}/{<RamList />}</Text>
           </View>
           <ProgressBar progress={metrics?.ram || 0} color="#8b5cf6" />
         </View>
@@ -336,6 +423,21 @@ export default function App() {
         ))}
       </LinearGradient>
 
+      {/* <View style={styles.dataPanel}>
+        <Text style={styles.panelTitle}>Дополнительные данные</Text>
+        <View style={styles.dataSection}>
+          <View style={styles.dataSectionItem}><ServerList /></View>
+          <View style={styles.dataSectionItem}><RamList /></View>
+          <View style={styles.dataSectionItem}><DiskList /></View>
+          <View style={styles.dataSectionItem}><TemperatureList /></View>
+          <View style={styles.dataSectionItem}><MetricList /></View>
+          <View style={styles.dataSectionItem}><MetricListRam /></View>
+          <View style={styles.dataSectionItem}><UptimeList /></View>
+          <View style={styles.dataSectionItem}><EthernetList /></View>
+          <View style={styles.dataSectionItem}><HtopList /></View>
+        </View>
+      </View> */}
+
       <TouchableOpacity style={styles.refreshBtn} onPress={loadMetrics}>
         <Text style={styles.refreshBtnText}>🔄 Обновить метрики</Text>
       </TouchableOpacity>
@@ -362,17 +464,33 @@ export default function App() {
       ) : (
         <>
           {serversData.map(server => (
-            <TouchableOpacity
-              key={server.id}
-              style={[styles.serverItem, server.id === currentServerId && styles.activeServer]}
-              onPress={() => handleServerSwitch(server.id)}
-            >
-              <View>
-                <Text style={styles.serverName}>{server.name}</Text>
-                <Text style={styles.serverIp}>{server.ip}:{server.port}</Text>
+            <View key={server.id} style={[styles.serverItem, server.id === currentServerId && styles.activeServer]}>
+              <TouchableOpacity
+                style={styles.serverInfoButton}
+                onPress={() => handleServerSwitch(server.id)}
+                onLongPress={() => handleServerLongPress(server)}
+              >
+                <View>
+                  <Text style={styles.serverName}>{server.name}</Text>
+                  <Text style={styles.serverIp}>{server.ip}:{server.port}</Text>
+                </View>
+              </TouchableOpacity>
+
+              <View style={styles.serverActionsRow}>
+                <TouchableOpacity
+                  style={[styles.serverStatus, server.id === currentServerId && styles.serverStatusActive]}
+                  onPress={() => handleServerSwitch(server.id)}
+                />
+                {pendingDeleteServerId === server.id && (
+                  <TouchableOpacity
+                    style={styles.deleteToggleButton}
+                    onPress={openDeleteConfirm}
+                  >
+                    <Text style={styles.deleteToggleButtonText}>Удалить</Text>
+                  </TouchableOpacity>
+                )}
               </View>
-              <View style={[styles.serverStatus, server.id === currentServerId && styles.serverStatusActive]} />
-            </TouchableOpacity>
+            </View>
           ))}
           
           <TouchableOpacity 
@@ -386,6 +504,26 @@ export default function App() {
       
       <Text style={[styles.footerNote, { marginTop: 24 }]}>Нажмите на сервер для переключения</Text>
     </ScrollView>
+  );
+
+  const renderDeleteConfirm = () => (
+    <Modal transparent visible={confirmDeleteVisible} animationType="slide">
+      <View style={styles.confirmOverlay}>
+        <View style={styles.confirmSheet}>
+          <Text style={styles.confirmTitle}>Подтвердите удаление</Text>
+          <Text style={styles.confirmText}>Вы действительно хотите удалить сервер «{deleteTarget?.name}»?</Text>
+          <Text style={styles.confirmTextSecondary}>{deleteTarget?.ip}:{deleteTarget?.port}</Text>
+          <View style={styles.confirmActions}>
+            <TouchableOpacity style={styles.confirmCancelButton} onPress={cancelDelete}>
+              <Text style={styles.confirmCancelText}>Отмена</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.confirmDeleteButton} onPress={handleConfirmDelete}>
+              <Text style={styles.confirmDeleteText}>Удалить</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
   );
 
   // Рендер вкладки настроек
@@ -488,18 +626,13 @@ export default function App() {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor="#07090e" />
       <LinearGradient colors={['#101217', '#07090e']} style={styles.appContainer}>
-        
-        <View style={styles.statusBar}>
-          <Text style={styles.statusBarText}>9:41</Text>
-          <Text style={styles.statusBarText}>📶 🔋</Text>
-        </View>
-
         <View style={styles.mainContent}>
           {activeTab === 'monitor' && renderMonitorTab()}
           {activeTab === 'servers' && renderServersTab()}
           {activeTab === 'settings' && renderSettingsTab()}
           {activeTab === 'console' && renderConsoleTab()}
         </View>
+        {renderDeleteConfirm()}
 
         <View style={styles.dockBar}>
           <TouchableOpacity style={[styles.dockItem, activeTab === 'monitor' && styles.activeDockItem]} onPress={() => setActiveTab('monitor')}>
@@ -790,6 +923,25 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  serverInfoButton: {
+    flex: 1,
+  },
+  serverActionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 12,
+  },
+  deleteButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#dc2626',
+  },
+  deleteButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
   activeServer: {
     borderColor: '#3b82f6',
     backgroundColor: 'rgba(59, 130, 246, 0.15)',
@@ -813,6 +965,20 @@ const styles = StyleSheet.create({
   serverStatusActive: {
     backgroundColor: '#10b981',
   },
+  deleteToggleButton: {
+    backgroundColor: '#ffffff',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#000000',
+    marginLeft: 12,
+  },
+  deleteToggleButtonText: {
+    color: '#000000',
+    fontWeight: '600',
+    fontSize: 12,
+  },
   scanQrButton: {
     backgroundColor: 'rgba(108, 92, 231, 0.2)',
     borderWidth: 0.5,
@@ -826,6 +992,86 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#a78bfa',
+  },
+  dataPanel: {
+    borderRadius: 28,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 0.5,
+    borderColor: 'rgba(72, 112, 160, 0.3)',
+    backgroundColor: 'rgba(12, 15, 24, 0.55)',
+  },
+  panelTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#E2E8F0',
+    marginBottom: 16,
+  },
+  dataSection: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  dataSectionItem: {
+    width: '48%',
+    marginBottom: 20,
+  },
+  confirmOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  confirmSheet: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 24,
+    minHeight: '45%',
+  },
+  confirmTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 12,
+    color: '#111',
+  },
+  confirmText: {
+    fontSize: 14,
+    color: '#333',
+    lineHeight: 20,
+    marginBottom: 8,
+  },
+  confirmTextSecondary: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginBottom: 24,
+  },
+  confirmActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  confirmCancelButton: {
+    flex: 1,
+    backgroundColor: '#f3f4f6',
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: 'center',
+  },
+  confirmCancelText: {
+    color: '#111',
+    fontWeight: '700',
+  },
+  confirmDeleteButton: {
+    flex: 1,
+    backgroundColor: '#111',
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: 'center',
+  },
+  confirmDeleteText: {
+    color: '#fff',
+    fontWeight: '700',
   },
   settingsGroup: {
     borderRadius: 28,
@@ -977,5 +1223,54 @@ const styles = StyleSheet.create({
   },
   activeDockLabel: {
     color: '#3b82f6',
+  },
+
+  metricBlockTouchable: {
+    width: '100%',
+    padding: 12,
+  },
+  metricHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: 6,
+  },
+  expandIcon: {
+    fontSize: 12,
+    color: '#8E99B3',
+  },
+  expandedInfo: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 0.5,
+    borderTopColor: 'rgba(66, 153, 225, 0.2)',
+    width: '100%',
+  },
+  expandedInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  expandedInfoLabel: {
+    fontSize: 11,
+    color: '#8E99B3',
+    fontWeight: '500',
+  },
+  expandedInfoValue: {
+    fontSize: 11,
+    color: '#EFF3FF',
+    fontWeight: '500',
+  },
+  expandedInfoDivider: {
+    height: 1,
+    backgroundColor: 'rgba(66, 153, 225, 0.1)',
+    marginVertical: 8,
+  },
+  loadValue: {
+    color: '#3b82f6',
+    fontSize: 13,
+    fontWeight: '700',
   },
 });

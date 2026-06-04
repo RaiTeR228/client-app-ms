@@ -29,6 +29,7 @@ export default function HomeScreen() {
       
       <View style={styles.section}>
         <RamList />
+        
       </View>
       
       <View style={styles.section}>
@@ -40,6 +41,7 @@ export default function HomeScreen() {
       </View>
 
       <View>
+        <Text>metric</Text>
         <MetricList/>
         <MetricListRam />
       </View>
@@ -63,7 +65,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#716d6d',
   },
   section: {
     marginBottom: 20,
